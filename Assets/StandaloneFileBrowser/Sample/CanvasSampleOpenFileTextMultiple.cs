@@ -1,11 +1,11 @@
-using System.Text;
+using SFB;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.EventSystems;
-using SFB;
+using UnityEngine.Networking;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(Button))]
 public class CanvasSampleOpenFileTextMultiple : MonoBehaviour, IPointerDownHandler {
@@ -38,12 +38,16 @@ public class CanvasSampleOpenFileTextMultiple : MonoBehaviour, IPointerDownHandl
     }
 
     private void OnClick() {
-        // var paths = StandaloneFileBrowser.OpenFilePanel("Title", "", "txt", true);
+        //var paths = StandaloneFileBrowser.OpenFilePanel("Title", "", "txt", true);
         var paths = StandaloneFileBrowser.OpenFilePanel("Open File", "", "", true);
+        //var paths = StandaloneFileBrowser.OpenFilePanel("Open File", "", new []
+        //{
+        //    new ExtensionFilter("Text files", new [] { "txt", "log" })
+        //}, true);
         if (paths.Length > 0) {
             var urlArr = new List<string>(paths.Length);
             for (int i = 0; i < paths.Length; i++) {
-                urlArr.Add(new System.Uri(paths[i]).AbsoluteUri);
+                urlArr.Add(new Uri(paths[i]).AbsoluteUri);
             }
             StartCoroutine(OutputRoutine(urlArr.ToArray()));
         }
@@ -53,9 +57,12 @@ public class CanvasSampleOpenFileTextMultiple : MonoBehaviour, IPointerDownHandl
     private IEnumerator OutputRoutine(string[] urlArr) {
         var outputText = "";
         for (int i = 0; i < urlArr.Length; i++) {
-            var loader = new WWW(urlArr[i]);
-            yield return loader;
-            outputText += loader.text;
+            using (var loader = UnityWebRequest.Get(urlArr[i]))
+            {
+                yield return loader.SendWebRequest();
+                outputText += loader.downloadHandler.text;
+            }
+            outputText += Environment.NewLine;
         }
         output.text = outputText;
     }

@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace SFB
 {
@@ -11,10 +8,6 @@ namespace SFB
     // All rights reserved
 
     // OpenFileDlg.cs
-
-    using System;
-    using System.Text;
-    using System.Runtime.InteropServices;
 
     /*
     typedef struct tagOFN { 
@@ -47,7 +40,7 @@ namespace SFB
     */
 
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public class OpenFileName
     {
         public static int OFN_NOCHANGEDIR = 0x00000008;
@@ -60,31 +53,32 @@ namespace SFB
         public IntPtr dlgOwner = IntPtr.Zero;
         public IntPtr instance = IntPtr.Zero;
 
-        public String filter = null;
-        public String customFilter = null;
+        public string filter = null;
+        public string customFilter = null;
         public int maxCustFilter = 0;
         public int filterIndex = 0;
 
-        public String file = null;
+        // To allow for multistrings
+        public IntPtr file = IntPtr.Zero;
         public int maxFile = 0;
 
-        public String fileTitle = null;
+        public string fileTitle = null;
         public int maxFileTitle = 0;
 
-        public String initialDir = null;
+        public string initialDir = null;
 
-        public String title = null;
+        public string title = null;
 
         public int flags = 0;
         public short fileOffset = 0;
         public short fileExtension = 0;
 
-        public String defExt = null;
+        public string defExt = null;
 
         public IntPtr custData = IntPtr.Zero;
         public IntPtr hook = IntPtr.Zero;
 
-        public String templateName = null;
+        public string templateName = null;
 
         public IntPtr reservedPtr = IntPtr.Zero;
         public int reservedInt = 0;
@@ -93,39 +87,14 @@ namespace SFB
 
     public class LibWrap
     {
-        //BOOL GetOpenFileName(LPOPENFILENAME lpofn);
         [DllImport("Comdlg32.dll", CharSet = CharSet.Auto)]
         public static extern bool GetOpenFileName([In, Out] OpenFileName ofn);
-    }
 
-    public class App
-    {
-        public static void Main()
-        {
-            OpenFileName ofn = new OpenFileName();
+        [DllImport("Comdlg32.dll", CharSet = CharSet.Auto)]
+        public static extern bool GetSaveFileName([In, Out] OpenFileName ofn);
 
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetActiveWindow();
 
-            ofn.structSize = Marshal.SizeOf(ofn);
-
-            ofn.filter = "Log files\0*.log\0Batch files\0*.bat\0";
-
-            ofn.file = new String(new char[256]);
-            ofn.maxFile = ofn.file.Length;
-
-            ofn.fileTitle = new String(new char[64]);
-            ofn.maxFileTitle = ofn.fileTitle.Length;
-
-            ofn.initialDir = "C:\\";
-            ofn.title = "Open file called using platform invoke...";
-            ofn.defExt = "txt";
-
-            if (LibWrap.GetOpenFileName(ofn))
-            {
-                Console.WriteLine("Selected file with full path: {0}", ofn.file);
-                Console.WriteLine("Selected file name: {0}", ofn.fileTitle);
-                Console.WriteLine("Offset from file name: {0}", ofn.fileOffset);
-                Console.WriteLine("Offset from file extension: {0}", ofn.fileExtension);
-            }
-        }
     }
 }
