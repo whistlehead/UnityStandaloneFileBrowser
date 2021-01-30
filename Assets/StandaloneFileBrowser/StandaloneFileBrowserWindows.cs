@@ -3,9 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-//using System.Windows.Forms;
 using System.Runtime.InteropServices;
-//using Ookii.Dialogs;
 
 namespace SFB
 {
@@ -36,24 +34,11 @@ namespace SFB
                     OpenFileName.OFN_FILEMUSTEXIST;
                 if (multiselect) ofn.flags |= OpenFileName.OFN_ALLOWMULTISELECT;
 
-                var rc = new List<string>();
                 if (LibWrap.GetOpenFileName(ofn))
                 {
-                    var filenames = PtrToStringArrayUni(ofn.file);
-                    if (filenames.Count == 1)
-                    {
-                        rc = filenames;
-                    }
-                    else if (filenames.Count > 1)
-                    {
-                        var root = filenames[0];
-                        for (int i = 1; i < filenames.Count; ++i)
-                        {
-                            rc.Add(Path.Combine(root, filenames[i]));
-                        }
-                    }
+                    return GetFilenamesUni(ofn.file).ToArray();
                 }
-                return rc.ToArray();
+                return new string[] { };
             }
             finally
             {
@@ -90,19 +75,40 @@ namespace SFB
                 ofn.fileTitle = new string(new char[ofn.maxFileTitle]);
                 ofn.initialDir = GetDirectoryPath(directory);
                 ofn.title = title;
+                // Alternatively could change after, but that means the overwrite prompt doesn't work
+                if (extensions != null && extensions.Length > 0 && extensions[0].Extensions.Length > 0)
+                {
+                    ofn.defExt = extensions[0].Extensions[0];
+                }
                 ofn.flags =
-                    OpenFileName.OFN_NOCHANGEDIR |
-                    OpenFileName.OFN_EXPLORER |
-                    OpenFileName.OFN_PATHMUSTEXIST |
-                    OpenFileName.OFN_FILEMUSTEXIST;
+                    OpenFileName.OFN_NOCHANGEDIR
+                    | OpenFileName.OFN_EXPLORER
+                    | OpenFileName.OFN_PATHMUSTEXIST
+                    | OpenFileName.OFN_OVERWRITEPROMPT;
 
-                string rc = null;
                 if (LibWrap.GetSaveFileName(ofn))
                 {
-                    var filenames = PtrToStringArrayUni(ofn.file);
-                    if (filenames.Count == 1) rc = filenames[0];
+                    var filenames = GetFilenamesUni(ofn.file);
+                    if (filenames.Count == 1 && filenames[0] != null)
+                    {
+                        var rc = filenames[0];
+                        //if (ofn.fileExtension == 0)
+                        //{
+                        //    if (extensions != null &&
+                        //        ofn.filterIndex > 0 &&
+                        //        ofn.filterIndex <= extensions.Length)
+                        //    {
+                        //        var extensionList = extensions[ofn.filterIndex - 1];
+                        //        if (extensionList.Extensions.Length > 0)
+                        //        {
+                        //            rc = Path.ChangeExtension(rc, "." + extensionList.Extensions[0]);
+                        //        }
+                        //    }
+                        //}
+                        return rc;
+                    }
                 }
-                return rc;
+                return string.Empty;
             }
             finally
             {
@@ -142,25 +148,34 @@ namespace SFB
                 filterString += "\0";
             }
             filterString += "\0";
-            //filterString = filterString.Remove(filterString.Length - 1);
             return filterString;
         }
+
+        static readonly string separatorString = Path.DirectorySeparatorChar.ToString();
+        static readonly string altSeparatorString = Path.AltDirectorySeparatorChar.ToString();
 
         private static string GetDirectoryPath(string directory)
         {
             if (string.IsNullOrEmpty(directory)) return null;
             var directoryPath = Path.GetFullPath(directory);
-            if (!directoryPath.EndsWith("\\"))
-            {
-                directoryPath += "\\";
-            }
-            if (Path.GetPathRoot(directoryPath) == directoryPath)
-            {
-                return directory;
-            }
-            return Path.GetDirectoryName(directoryPath) + Path.DirectorySeparatorChar;
+            if (directoryPath.EndsWith(separatorString)) return directoryPath;
+            if (directoryPath.EndsWith(altSeparatorString)) return directoryPath;
+            if (directoryPath.Contains(separatorString)) return directoryPath + separatorString;
+            return directoryPath + altSeparatorString;
         }
 
+        private List<string> GetFilenamesUni(IntPtr file)
+        {
+            var filenames = PtrToStringArrayUni(file);
+            if (filenames.Count <= 1) return filenames;
+            var rc = new List<string>();
+            var root = filenames[0];
+            for (int i = 1; i < filenames.Count; ++i)
+            {
+                rc.Add(Path.Combine(root, filenames[i]));
+            }
+            return rc;
+        }
 
         private List<string> PtrToStringArrayUni(IntPtr ptr)
         {

@@ -3,46 +3,10 @@ using System.Runtime.InteropServices;
 
 namespace SFB
 {
-    // Copyright
-    // Microsoft Corporation
-    // All rights reserved
-
-    // OpenFileDlg.cs
-
-    /*
-    typedef struct tagOFN { 
-      DWORD         lStructSize; 
-      HWND          hwndOwner; 
-      HINSTANCE     hInstance; 
-      LPCTSTR       lpstrFilter; 
-      LPTSTR        lpstrCustomFilter; 
-      DWORD         nMaxCustFilter; 
-      DWORD         nFilterIndex; 
-      LPTSTR        lpstrFile; 
-      DWORD         nMaxFile; 
-      LPTSTR        lpstrFileTitle; 
-      DWORD         nMaxFileTitle; 
-      LPCTSTR       lpstrInitialDir; 
-      LPCTSTR       lpstrTitle; 
-      DWORD         Flags; 
-      WORD          nFileOffset; 
-      WORD          nFileExtension; 
-      LPCTSTR       lpstrDefExt; 
-      LPARAM        lCustData; 
-      LPOFNHOOKPROC lpfnHook; 
-      LPCTSTR       lpTemplateName; 
-    #if (_WIN32_WINNT >= 0x0500)
-      void *        pvReserved;
-      DWORD         dwReserved;
-      DWORD         FlagsEx;
-    #endif // (_WIN32_WINNT >= 0x0500)
-    } OPENFILENAME, *LPOPENFILENAME; 
-    */
-
-
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public class OpenFileName
     {
+        public static int OFN_OVERWRITEPROMPT = 0x00000002;
         public static int OFN_NOCHANGEDIR = 0x00000008;
         public static int OFN_ALLOWMULTISELECT = 0x00000200;
         public static int OFN_PATHMUSTEXIST = 0x00000800;
@@ -87,10 +51,10 @@ namespace SFB
 
     public class LibWrap
     {
-        [DllImport("Comdlg32.dll", CharSet = CharSet.Auto)]
+        [DllImport("Comdlg32.dll", CharSet = CharSet.Unicode)]
         public static extern bool GetOpenFileName([In, Out] OpenFileName ofn);
 
-        [DllImport("Comdlg32.dll", CharSet = CharSet.Auto)]
+        [DllImport("Comdlg32.dll", CharSet = CharSet.Unicode)]
         public static extern bool GetSaveFileName([In, Out] OpenFileName ofn);
 
         [DllImport("user32.dll")]
